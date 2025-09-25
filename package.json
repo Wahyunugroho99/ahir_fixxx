@@ -1,0 +1,95 @@
+{
+  "name": "n8n-video-summarizer-workflow",
+  "version": "1.0.0",
+  "description": "Automated workflow to summarize Google Drive video folders and send PDF reports via Telegram",
+  "main": "validate-config.js",
+  "scripts": {
+    "install": "./install.sh",
+    "start": "docker-compose up -d",
+    "stop": "docker-compose down",
+    "restart": "docker-compose restart",
+    "logs": "docker-compose logs -f",
+    "validate": "node validate-config.js",
+    "test": "./test-webhook.sh",
+    "backup": "docker-compose exec postgres pg_dump -U n8n -d n8n > backups/n8n-backup-$(date +%Y%m%d_%H%M%S).sql",
+    "status": "docker-compose ps"
+  },
+  "keywords": [
+    "n8n",
+    "automation",
+    "video",
+    "google-drive",
+    "telegram",
+    "pdf",
+    "summarization",
+    "ai",
+    "workflow"
+  ],
+  "author": "Wahyunugroho99",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Wahyunugroho99/ahir_fixxx.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Wahyunugroho99/ahir_fixxx/issues"
+  },
+  "homepage": "https://github.com/Wahyunugroho99/ahir_fixxx#readme",
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {
+    "docker": ">=20.0.0",
+    "docker-compose": ">=1.29.0"
+  },
+  "config": {
+    "n8n": {
+      "version": "latest",
+      "port": 5678,
+      "protocol": "http"
+    },
+    "postgres": {
+      "version": "13",
+      "database": "n8n"
+    },
+    "redis": {
+      "version": "6-alpine"
+    }
+  },
+  "workflows": {
+    "video-summarizer": {
+      "file": "n8n-workflow.json",
+      "webhook": "/webhook/video-summarizer-webhook",
+      "description": "Main workflow for video summarization"
+    }
+  },
+  "apis": {
+    "required": [
+      "Google Drive API",
+      "OpenAI API", 
+      "Telegram Bot API"
+    ],
+    "optional": [
+      "FFmpeg (for video processing)"
+    ]
+  },
+  "deployment": {
+    "docker": {
+      "compose": "docker-compose.yml",
+      "nginx": "nginx.conf"
+    },
+    "monitoring": {
+      "healthcheck": "/healthz",
+      "logs": "logs/",
+      "backups": "backups/"
+    }
+  },
+  "documentation": {
+    "quickStart": "QUICK_START.md",
+    "setupGuide": "setup-guide.md",
+    "configuration": "config-example.json"
+  }
+}

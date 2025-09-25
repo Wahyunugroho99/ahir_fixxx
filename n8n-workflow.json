@@ -1,0 +1,265 @@
+{
+  "name": "Google Drive Video Summarizer to Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "resource": "file",
+        "operation": "list",
+        "folderId": "={{ $json.folderId }}",
+        "queryString": "mimeType contains 'video/' and trashed=false"
+      },
+      "id": "google-drive-list-videos",
+      "name": "List Videos from Google Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [540, 240],
+      "credentials": {
+        "googleApi": {
+          "id": "your-google-api-credentials-id",
+          "name": "Google API Credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "download",
+        "fileId": "={{ $json.id }}"
+      },
+      "id": "google-drive-download-video",
+      "name": "Download Video Files",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [760, 240],
+      "credentials": {
+        "googleApi": {
+          "id": "your-google-api-credentials-id",
+          "name": "Google API Credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "ffmpeg -i \"{{ $json.fileName }}\" -vf \"thumbnail,scale=320:240\" -frames:v 1 \"{{ $json.fileName }}_thumbnail.jpg\" && ffprobe -v quiet -print_format json -show_format -show_streams \"{{ $json.fileName }}\" > \"{{ $json.fileName }}_metadata.json\""
+      },
+      "id": "extract-video-metadata",
+      "name": "Extract Video Metadata",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [980, 240]
+    },
+    {
+      "parameters": {
+        "model": "gpt-3.5-turbo",
+        "messages": {
+          "messageType": "multipleMessages",
+          "values": [
+            {
+              "role": "system",
+              "message": "You are a video summarization assistant. Analyze the provided video metadata and create a concise summary."
+            },
+            {
+              "role": "user",
+              "message": "Please create a summary of this video based on the following metadata:\n\nFilename: {{ $json.fileName }}\nDuration: {{ $json.duration }}\nFormat: {{ $json.format }}\nSize: {{ $json.size }}\nResolution: {{ $json.width }}x{{ $json.height }}\n\nCreate a professional summary including:\n1. Basic video information\n2. Technical specifications\n3. Estimated content type based on filename and metadata\n4. Key details that would be useful for cataloging"
+            }
+          ]
+        }
+      },
+      "id": "openai-video-summary",
+      "name": "Generate Video Summary with AI",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1200, 240],
+      "credentials": {
+        "openAiApi": {
+          "id": "your-openai-credentials-id",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "htmlContent": "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"utf-8\">\n    <title>Video Folder Summary</title>\n    <style>\n        body { font-family: Arial, sans-serif; margin: 40px; }\n        .header { text-align: center; margin-bottom: 30px; }\n        .video-item { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }\n        .video-title { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px; }\n        .metadata { background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0; }\n        .summary { line-height: 1.6; }\n        .thumbnail { max-width: 200px; margin: 10px 0; }\n    </style>\n</head>\n<body>\n    <div class=\"header\">\n        <h1>Video Folder Summary Report</h1>\n        <p>Generated on: {{ new Date().toLocaleDateString() }}</p>\n        <p>Folder: {{ $('List Videos from Google Drive').first().$json.folderName || 'Google Drive Folder' }}</p>\n    </div>\n    \n    {{ $('Generate Video Summary with AI').all().map((item, index) => `\n        <div class=\"video-item\">\n            <div class=\"video-title\">Video ${index + 1}: ${item.json.fileName}</div>\n            <div class=\"metadata\">\n                <strong>Technical Details:</strong><br>\n                Duration: ${item.json.duration || 'Unknown'}<br>\n                Format: ${item.json.format || 'Unknown'}<br>\n                Size: ${item.json.size || 'Unknown'}<br>\n                Resolution: ${item.json.width && item.json.height ? item.json.width + 'x' + item.json.height : 'Unknown'}\n            </div>\n            <div class=\"summary\">\n                <strong>Summary:</strong><br>\n                ${item.json.summary || 'No summary available'}\n            </div>\n        </div>\n    `).join('') }}\n    \n    <div style=\"margin-top: 40px; text-align: center; color: #666;\">\n        <p>Total Videos Processed: {{ $('Generate Video Summary with AI').all().length }}</p>\n        <p>Report generated by n8n Video Summarizer Workflow</p>\n    </div>\n</body>\n</html>",
+        "options": {
+          "marginTop": "20",
+          "marginBottom": "20",
+          "marginLeft": "20",
+          "marginRight": "20"
+        }
+      },
+      "id": "html-to-pdf-converter",
+      "name": "Generate PDF Report",
+      "type": "n8n-nodes-base.htmlCssToImage",
+      "typeVersion": 1,
+      "position": [1420, 240]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.telegramChatId }}",
+        "text": "📹 Video Folder Summary Report\n\n📁 Folder: {{ $('List Videos from Google Drive').first().$json.folderName || 'Google Drive Folder' }}\n📊 Total Videos: {{ $('Generate Video Summary with AI').all().length }}\n📅 Generated: {{ new Date().toLocaleDateString() }}\n\n📎 PDF report is attached below with detailed summaries of all videos.",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "telegram-send-message",
+      "name": "Send Summary Message to Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1640, 160],
+      "credentials": {
+        "telegramApi": {
+          "id": "your-telegram-bot-credentials-id",
+          "name": "Telegram Bot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.telegramChatId }}",
+        "binaryData": true,
+        "binaryPropertyName": "data",
+        "additionalFields": {
+          "caption": "Complete video folder summary report",
+          "filename": "video-summary-{{ new Date().toISOString().split('T')[0] }}.pdf"
+        }
+      },
+      "id": "telegram-send-pdf",
+      "name": "Send PDF to Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1640, 320],
+      "credentials": {
+        "telegramApi": {
+          "id": "your-telegram-bot-credentials-id",
+          "name": "Telegram Bot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "folderId",
+              "value": "{{ $json.folderId || 'your-google-drive-folder-id' }}"
+            },
+            {
+              "name": "telegramChatId",
+              "value": "{{ $json.telegramChatId || 'your-telegram-chat-id' }}"
+            }
+          ]
+        }
+      },
+      "id": "workflow-input",
+      "name": "Workflow Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [320, 240]
+    },
+    {
+      "parameters": {
+        "mode": "webhook",
+        "webhookId": "video-summarizer-webhook"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [100, 240],
+      "webhookId": "video-summarizer-webhook"
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Workflow Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Input": {
+      "main": [
+        [
+          {
+            "node": "List Videos from Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Videos from Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Download Video Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Video Files": {
+      "main": [
+        [
+          {
+            "node": "Extract Video Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Video Metadata": {
+      "main": [
+        [
+          {
+            "node": "Generate Video Summary with AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Video Summary with AI": {
+      "main": [
+        [
+          {
+            "node": "Generate PDF Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate PDF Report": {
+      "main": [
+        [
+          {
+            "node": "Send Summary Message to Telegram",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send PDF to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "1",
+  "id": "video-summarizer-workflow",
+  "meta": {
+    "instanceId": "your-n8n-instance-id"
+  },
+  "tags": ["video", "google-drive", "pdf", "telegram", "automation"]
+}

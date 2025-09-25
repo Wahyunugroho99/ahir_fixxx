@@ -1,0 +1,72 @@
+# n8n Video Summarizer
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+/tmp/
+*.tmp
+*.temp
+
+# Video processing files
+/video-processing/
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.wmv
+*.flv
+*.webm
+*.m4v
+
+# Generated files
+*.pdf
+*_thumbnail.jpg
+*_metadata.json
+
+# Configuration files with secrets
+.env
+config.json
+credentials.json
+
+# Docker volumes
+postgres_data/
+n8n_data/
+redis_data/
+backups/
+
+# SSL certificates
+ssl/
+*.pem
+*.key
+*.crt
+
+# Logs
+logs/
+*.log
+access.log
+error.log
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
+
+# n8n specific
+.n8n/
+workflows/*.json.backup
+
+# FFmpeg temp files
+ffmpeg_*
+temp_video_*

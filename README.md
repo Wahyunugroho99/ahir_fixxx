@@ -1,5 +1,64 @@
 
-🔌 A. ESP32 (MASTER - Robot Kendali)
+# N8N Video Summarizer Workflow
+
+Solusi otomatis untuk meringkas folder video di Google Drive dan mengirimkan laporan PDF melalui Telegram menggunakan n8n workflow automation.
+
+## 🚀 Fitur Utama
+
+- **Otomatis**: Scan folder Google Drive untuk file video
+- **AI-Powered**: Ringkasan video menggunakan OpenAI GPT
+- **PDF Report**: Laporan profesional dengan metadata lengkap
+- **Telegram Integration**: Pengiriman otomatis via bot Telegram
+- **Scalable**: Dapat memproses hingga 100+ video per folder
+
+## 📋 Prasyarat
+
+- n8n instance (self-hosted atau cloud)
+- Google Drive API access
+- OpenAI API key  
+- Telegram Bot token
+- FFmpeg (untuk ekstraksi metadata video)
+
+## 🛠️ Quick Start
+
+1. **Import Workflow**
+   ```bash
+   # Import n8n-workflow.json ke n8n instance Anda
+   ```
+
+2. **Konfigurasi Credentials**
+   - Google Service Account
+   - OpenAI API
+   - Telegram Bot
+
+3. **Deploy dengan Docker**
+   ```bash
+   docker-compose up -d
+   ```
+
+4. **Test Webhook**
+   ```bash
+   ./test-webhook.sh
+   ```
+
+## 📁 File Structure
+
+- `n8n-workflow.json` - Workflow utama n8n
+- `setup-guide.md` - Panduan setup lengkap
+- `config-example.json` - Contoh konfigurasi
+- `docker-compose.yml` - Docker deployment
+- `nginx.conf` - Reverse proxy config
+- `test-webhook.sh` - Script testing
+
+## 🔧 Legacy: Robot Pemadam Api dengan ESP32 & ESP32-CAM
+
+> **Note**: File berikut adalah bagian dari proyek robotika legacy yang ada sebelumnya:
+
+Proyek ini menggunakan dua ESP32:
+- **ESP32 Master**: Mengontrol pergerakan robot dan sensor ultrasonik
+- **ESP32-CAM Slave**: Menangani kamera, sensor api, dan gas
+
+### 🔌 A. ESP32 (MASTER - Robot Kendali)
 1. Motor Driver L298N
 Komponen	ESP32 Pin
 IN1 (kanan)	GPIO 12

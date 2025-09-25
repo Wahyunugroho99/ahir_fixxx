@@ -1,0 +1,179 @@
+{
+  "workflowConfig": {
+    "name": "Google Drive Video Summarizer",
+    "description": "Automatically summarize video folders from Google Drive and send PDF reports via Telegram",
+    "version": "1.0.0",
+    "author": "n8n Video Summarizer",
+    "tags": ["automation", "video", "google-drive", "telegram", "pdf"]
+  },
+
+  "credentials": {
+    "google": {
+      "type": "service_account",
+      "credentialName": "Google Drive API",
+      "requiredScopes": [
+        "https://www.googleapis.com/auth/drive.readonly"
+      ],
+      "notes": "Create service account in Google Cloud Console and download JSON key"
+    },
+    "openai": {
+      "type": "api_key",
+      "credentialName": "OpenAI API",
+      "model": "gpt-3.5-turbo",
+      "notes": "Get API key from OpenAI platform"
+    },
+    "telegram": {
+      "type": "bot_token",
+      "credentialName": "Telegram Bot",
+      "notes": "Create bot with @BotFather and get token"
+    }
+  },
+
+  "parameters": {
+    "googleDrive": {
+      "folderId": "REPLACE_WITH_YOUR_FOLDER_ID",
+      "description": "Google Drive folder ID containing videos to summarize",
+      "example": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
+    },
+    "telegram": {
+      "chatId": "REPLACE_WITH_YOUR_CHAT_ID", 
+      "description": "Telegram chat ID where reports will be sent",
+      "example": "123456789",
+      "howToGet": "Send message to your bot, then check https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates"
+    },
+    "processing": {
+      "maxVideosPerRun": 50,
+      "thumbnailSize": "320x240",
+      "summaryModel": "gpt-3.5-turbo",
+      "pdfMargins": {
+        "top": 20,
+        "bottom": 20,
+        "left": 20,
+        "right": 20
+      }
+    }
+  },
+
+  "videoFormats": {
+    "supported": [
+      "mp4", "avi", "mov", "mkv", "wmv", "flv", "webm", "m4v"
+    ],
+    "notes": "FFmpeg must be installed on n8n server to process these formats"
+  },
+
+  "aiPrompts": {
+    "videoSummary": {
+      "system": "You are a video summarization assistant. Analyze the provided video metadata and create a concise summary.",
+      "user": "Please create a summary of this video based on the following metadata:\n\nFilename: {fileName}\nDuration: {duration}\nFormat: {format}\nSize: {size}\nResolution: {width}x{height}\n\nCreate a professional summary including:\n1. Basic video information\n2. Technical specifications  \n3. Estimated content type based on filename and metadata\n4. Key details that would be useful for cataloging",
+      "customization": {
+        "maxTokens": 500,
+        "temperature": 0.7,
+        "notes": "Adjust temperature for more/less creative summaries"
+      }
+    }
+  },
+
+  "pdfTemplate": {
+    "title": "Video Folder Summary Report",
+    "styling": {
+      "fontFamily": "Arial, sans-serif",
+      "headerColor": "#333",
+      "backgroundColor": "#f5f5f5",
+      "borderColor": "#ddd"
+    },
+    "sections": [
+      "header",
+      "summary_stats", 
+      "video_details",
+      "footer"
+    ],
+    "customization": "Modify HTML template in 'Generate PDF Report' node"
+  },
+
+  "notifications": {
+    "telegram": {
+      "messageFormat": "HTML",
+      "includeEmojis": true,
+      "maxMessageLength": 4096,
+      "fileCaption": "Complete video folder summary report"
+    }
+  },
+
+  "performance": {
+    "recommendations": {
+      "maxFolderSize": "100 videos",
+      "batchSize": 10,
+      "timeout": "30 minutes",
+      "memoryLimit": "2GB"
+    },
+    "optimization": {
+      "downloadVideos": false,
+      "processMetadataOnly": true,
+      "notes": "Set downloadVideos=true only if content analysis is needed"
+    }
+  },
+
+  "monitoring": {
+    "logging": {
+      "level": "INFO",
+      "includeMetadata": true,
+      "logRotation": "daily"
+    },
+    "alerts": {
+      "onFailure": true,
+      "onSuccess": false,
+      "channels": ["telegram", "email"]
+    }
+  },
+
+  "security": {
+    "dataHandling": {
+      "temporaryFiles": "auto-cleanup",
+      "apiKeyStorage": "n8n-credentials-only",
+      "videoDownloads": "temp-directory"
+    },
+    "permissions": {
+      "googleDrive": "read-only",
+      "telegram": "send-messages-only"
+    }
+  },
+
+  "troubleshooting": {
+    "commonIssues": {
+      "googleDriveAccess": {
+        "error": "403 Forbidden",
+        "solution": "Ensure service account has access to the folder"
+      },
+      "telegramDelivery": {
+        "error": "Chat not found",
+        "solution": "Verify chat ID and bot permissions"
+      },
+      "ffmpegMissing": {
+        "error": "Command not found",
+        "solution": "Install FFmpeg on n8n server"
+      },
+      "pdfTooLarge": {
+        "error": "File size exceeds limit",
+        "solution": "Process folders in smaller batches"
+      }
+    }
+  },
+
+  "deployment": {
+    "requirements": {
+      "n8nVersion": ">=0.235.0",
+      "nodeVersion": ">=16.0.0",
+      "diskSpace": "5GB minimum",
+      "memory": "2GB minimum"
+    },
+    "installation": {
+      "steps": [
+        "Import workflow JSON",
+        "Configure credentials", 
+        "Install FFmpeg",
+        "Test with small folder",
+        "Set up monitoring"
+      ]
+    }
+  }
+}
